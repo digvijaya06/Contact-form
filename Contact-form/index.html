@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Form</title>
+    <style>
+      :root {
+        --primary: #007bff;
+        --muted: #6c757d;
+        --bg: #f5f5f5;
+        --card: #ffffff;
+        --error: #e63946;
+        --ok: #2a9d8f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 40px 16px;
+      }
+      .contact-form {
+        width: 100%;
+        max-width: 520px;
+        background: var(--card);
+        padding: 24px 24px 18px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 0.3s ease;
+      }
+      .contact-form h2 {
+        margin: 0 0 16px;
+        text-align: center;
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      input[type="text"],
+      input[type="email"],
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        border: 1.5px solid #ccc;
+        border-radius: 8px;
+        transition: border-color 0.3s ease, background-color 0.3s ease;
+        background: #fff;
+        resize: vertical;
+      }
+      input:focus,
+      textarea:focus {
+        border-color: var(--primary);
+        outline: none;
+        background: #f7fbff;
+      }
+      .invalid {
+        border-color: var(--error) !important;
+        background: #ffecec;
+      }
+      .valid {
+        border-color: var(--ok) !important;
+        background: #effaf8;
+      }
+      .error {
+        color: var(--error);
+        font-size: 12px;
+        margin-top: 6px;
+        min-height: 14px;
+      }
+      .success {
+        color: var(--ok);
+        text-align: center;
+        font-weight: 700;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        min-height: 20px;
+      }
+      .success.show {
+        opacity: 1;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+      }
+      .actions button {
+        flex: 1;
+        padding: 12px 0;
+        font-size: 15px;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        transition: opacity 0.2s ease, background-color 0.3s ease;
+      }
+      #submitBtn {
+        background: var(--primary);
+      }
+      #resetBtn {
+        background: var(--muted);
+      }
+      .actions button:hover {
+        opacity: 0.95;
+      }
+      .actions button:disabled {
+        background: #cfcfcf !important;
+        cursor: not-allowed;
+        opacity: 1;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        20%,
+        60% {
+          transform: translateX(-5px);
+        }
+        40%,
+        80% {
+          transform: translateX(5px);
+        }
+      }
+      .shake {
+        animation: shake 0.3s;
+      }
+      @keyframes highlight {
+        0% {
+          box-shadow: 0 0 0 rgba(42, 157, 143, 0);
+        }
+        50% {
+          box-shadow: 0 0 12px rgba(42, 157, 143, 0.6);
+        }
+        100% {
+          box-shadow: 0 0 0 rgba(42, 157, 143, 0);
+        }
+      }
+      .highlight-success {
+        animation: highlight 1.2s ease forwards;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="contact-form" id="formWrapper">
+      <h2>Contact Us</h2>
+      <form id="contactForm" novalidate>
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" autocomplete="name" />
+          <div class="error" id="nameError"></div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" autocomplete="email" />
+          <div class="error" id="emailError"></div>
+        </div>
+        <div class="form-group">
+          <label for="message">Message:</label>
+          <textarea id="message" rows="4"></textarea>
+          <div class="error" id="messageError"></div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="submitBtn" disabled>Submit</button>
+          <button type="button" id="resetBtn">Reset</button>
+        </div>
+        <div class="success" id="successMessage"></div>
+      </form>
+    </div>
+
+    <script>
+      const form = document.getElementById("contactForm");
+      const nameInput = document.getElementById("name");
+      const emailInput = document.getElementById("email");
+      const messageInput = document.getElementById("message");
+      const submitBtn = document.getElementById("submitBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const successMessage = document.getElementById("successMessage");
+      const nameError = document.getElementById("nameError");
+      const emailError = document.getElementById("emailError");
+      const messageError = document.getElementById("messageError");
+      const formWrapper = document.getElementById("formWrapper");
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      function flip(el, ok) {
+        el.classList.toggle("valid", ok);
+        el.classList.toggle("invalid", !ok);
+      }
+      function validateName() {
+        const v = nameInput.value.trim();
+        if (!v) {
+          nameError.textContent = "Please enter your name.";
+          flip(nameInput, false);
+          return false;
+        }
+        nameError.textContent = "";
+        flip(nameInput, true);
+        return true;
+      }
+      function validateEmail() {
+        const v = emailInput.value.trim();
+        if (!v) {
+          emailError.textContent = "Please enter your email.";
+          flip(emailInput, false);
+          return false;
+        }
+        if (!emailPattern.test(v)) {
+          emailError.textContent = "Please enter a valid email.";
+          flip(emailInput, false);
+          return false;
+        }
+        emailError.textContent = "";
+        flip(emailInput, true);
+        return true;
+      }
+      function validateMessage() {
+        const v = messageInput.value.trim();
+        if (!v) {
+          messageError.textContent = "Please enter your message.";
+          flip(messageInput, false);
+          return false;
+        }
+        messageError.textContent = "";
+        flip(messageInput, true);
+        return true;
+      }
+      function checkForm() {
+        return validateName() & validateEmail() & validateMessage();
+      }
+
+      [nameInput, emailInput, messageInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          validateName();
+          validateEmail();
+          validateMessage();
+          submitBtn.disabled = !(
+            validateName() &&
+            validateEmail() &&
+            validateMessage()
+          );
+          successMessage.textContent = "";
+          localStorage.setItem(input.id, input.value);
+        });
+      });
+
+      resetBtn.addEventListener("click", () => {
+        [nameError, emailError, messageError].forEach(
+          (el) => (el.textContent = "")
+        );
+        [nameInput, emailInput, messageInput].forEach((el) =>
+          el.classList.remove("valid", "invalid")
+        );
+        successMessage.textContent = "";
+        successMessage.classList.remove("show");
+        form.reset();
+        submitBtn.disabled = true;
+        localStorage.clear();
+        charCounter.textContent = `0/${maxChars} characters`;
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!checkForm()) {
+          form.classList.add("shake");
+          setTimeout(() => form.classList.remove("shake"), 300);
+          return;
+        }
+        submitBtn.textContent = "Sending...";
+        submitBtn.disabled = true;
+        setTimeout(() => {
+          successMessage.textContent =
+            "Your message has been submitted successfully!";
+          successMessage.classList.add("show");
+          formWrapper.classList.add("highlight-success");
+          setTimeout(
+            () => formWrapper.classList.remove("highlight-success"),
+            1200
+          );
+          form.reset();
+          [nameInput, emailInput, messageInput].forEach((el) =>
+            el.classList.remove("valid", "invalid")
+          );
+          localStorage.clear();
+          charCounter.textContent = `0/${maxChars} characters`;
+          submitBtn.textContent = "Submit";
+          setTimeout(() => successMessage.classList.remove("show"), 4000);
+        }, 1500);
+      });
+
+      const maxChars = 250;
+      messageInput.setAttribute("maxlength", maxChars);
+      const charCounter = document.createElement("div");
+      charCounter.style.fontSize = "12px";
+      charCounter.style.textAlign = "right";
+      charCounter.style.marginTop = "4px";
+      messageInput.parentNode.appendChild(charCounter);
+      messageInput.addEventListener("input", () => {
+        charCounter.textContent = `${messageInput.value.length}/${maxChars} characters`;
+      });
+
+      window.addEventListener("load", () => {
+        nameInput.value = localStorage.getItem("name") || "";
+        emailInput.value = localStorage.getItem("email") || "";
+        messageInput.value = localStorage.getItem("message") || "";
+        charCounter.textContent = `${messageInput.value.length}/${maxChars} characters`;
+      });
+    </script>
+  </body>
+</html>
